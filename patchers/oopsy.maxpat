@@ -3,8 +3,8 @@
 		"fileversion" : 1,
 		"appversion" : 		{
 			"major" : 8,
-			"minor" : 1,
-			"revision" : 8,
+			"minor" : 5,
+			"revision" : 0,
 			"architecture" : "x64",
 			"modernui" : 1
 		}
@@ -376,8 +376,8 @@
 						"fileversion" : 1,
 						"appversion" : 						{
 							"major" : 8,
-							"minor" : 1,
-							"revision" : 8,
+							"minor" : 5,
+							"revision" : 0,
 							"architecture" : "x64",
 							"modernui" : 1
 						}
@@ -869,24 +869,12 @@
 			}
 , 			{
 				"box" : 				{
-					"id" : "obj-56",
-					"linecount" : 2,
-					"maxclass" : "comment",
-					"numinlets" : 1,
-					"numoutlets" : 0,
-					"patching_rect" : [ 514.0, 27.0, 120.0, 33.0 ],
-					"text" : "saving a patcher will also trigger compile"
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"id" : "obj-55",
 					"linecount" : 2,
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 614.0, 139.0, 150.0, 33.0 ],
+					"patching_rect" : [ 614.0, 139.0, 150.0, 34.0 ],
 					"text" : "audio must be on for  exportcode to work"
 				}
 
@@ -900,18 +888,6 @@
 					"outlettype" : [ "", "int" ],
 					"patching_rect" : [ 591.0, 183.75, 91.0, 22.0 ],
 					"text" : "adstatus switch"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-45",
-					"maxclass" : "newobj",
-					"numinlets" : 1,
-					"numoutlets" : 1,
-					"outlettype" : [ "bang" ],
-					"patching_rect" : [ 514.0, 64.0, 61.0, 22.0 ],
-					"text" : "savebang"
 				}
 
 			}
@@ -960,7 +936,7 @@
 					"numinlets" : 5,
 					"numoutlets" : 5,
 					"outlettype" : [ "", "", "", "", "" ],
-					"patching_rect" : [ 437.0, 113.75, 71.0, 62.0 ],
+					"patching_rect" : [ 437.0, 113.75, 71.0, 64.0 ],
 					"text" : "route samplerate blocksize target done"
 				}
 
@@ -984,7 +960,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 164.5, 27.0, 152.0, 47.0 ],
+					"patching_rect" : [ 164.5, 27.0, 152.0, 48.0 ],
 					"text" : "bang will trigger compile,\nother messages route to patcherattrs parser first"
 				}
 
@@ -1000,8 +976,8 @@
 						"fileversion" : 1,
 						"appversion" : 						{
 							"major" : 8,
-							"minor" : 1,
-							"revision" : 8,
+							"minor" : 5,
+							"revision" : 0,
 							"architecture" : "x64",
 							"modernui" : 1
 						}
@@ -1218,7 +1194,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 41.5, 160.0, 150.0, 33.0 ],
+					"patching_rect" : [ 41.5, 160.0, 150.0, 34.0 ],
 					"text" : "choose device target & options to compile for"
 				}
 
@@ -1230,7 +1206,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 137.5, 487.0, 224.0, 74.0 ],
+					"patching_rect" : [ 137.5, 487.0, 224.0, 75.0 ],
 					"text" : "the node.js script is a thin wrapper around oopsy.js, which will generate the glue code between gen~ export and the Daisy APIs, compile it, and try to upload it to a device."
 				}
 
@@ -1242,7 +1218,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 137.5, 397.000003099441528, 223.5, 60.0 ],
+					"patching_rect" : [ 137.5, 397.000003099441528, 223.5, 62.0 ],
 					"text" : "oopsy.snoop will find all the gen~ objects in the parent patcher, configure them for export, trigger the export, then notify the node.js script"
 				}
 
@@ -1254,7 +1230,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 554.0, 397.000003099441528, 114.0, 33.0 ],
+					"patching_rect" : [ 554.0, 397.000003099441528, 114.0, 34.0 ],
 					"text" : "turn Max-style path into OS path"
 				}
 
@@ -1335,7 +1311,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "", "" ],
-					"patching_rect" : [ 371.0, 494.0, 228.0, 26.0 ],
+					"patching_rect" : [ 371.0, 494.0, 228.0, 27.0 ],
 					"saved_object_attributes" : 					{
 						"autostart" : 0,
 						"defer" : 0,
@@ -1381,8 +1357,8 @@
 						"fileversion" : 1,
 						"appversion" : 						{
 							"major" : 8,
-							"minor" : 1,
-							"revision" : 8,
+							"minor" : 5,
+							"revision" : 0,
 							"architecture" : "x64",
 							"modernui" : 1
 						}
@@ -1531,7 +1507,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 3,
 					"outlettype" : [ "", "", "" ],
-					"patching_rect" : [ 371.0, 397.000003099441528, 114.0, 26.0 ],
+					"patching_rect" : [ 371.0, 397.000003099441528, 114.0, 27.0 ],
 					"saved_object_attributes" : 					{
 						"filename" : "oopsy.snoop",
 						"parameter_enable" : 0
@@ -1859,13 +1835,6 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-7", 0 ],
-					"source" : [ "obj-45", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
 					"destination" : [ "obj-12", 0 ],
 					"source" : [ "obj-5", 2 ]
 				}
@@ -1984,16 +1953,16 @@
 		}
 ,
 		"dependency_cache" : [ 			{
-				"name" : "oopsy.snoop.js",
+				"name" : "oopsy.node4max.js",
 				"bootpath" : "~/Documents/Max 8/Packages/oopsy/javascript",
-				"patcherrelativepath" : "../javascript",
+				"patcherrelativepath" : "../../../../Documents/Max 8/Packages/oopsy/javascript",
 				"type" : "TEXT",
 				"implicit" : 1
 			}
 , 			{
-				"name" : "oopsy.node4max.js",
+				"name" : "oopsy.snoop.js",
 				"bootpath" : "~/Documents/Max 8/Packages/oopsy/javascript",
-				"patcherrelativepath" : "../javascript",
+				"patcherrelativepath" : "../../../../Documents/Max 8/Packages/oopsy/javascript",
 				"type" : "TEXT",
 				"implicit" : 1
 			}

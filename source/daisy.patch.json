@@ -48,19 +48,15 @@
     },
     "inputs": {
       "kn1": {
-        "automap": true,
         "code": "hardware.GetKnobValue(hardware.CTRL_1);"
       },
       "kn2": {
-        "automap": true,
         "code": "hardware.GetKnobValue(hardware.CTRL_2);"
       },
       "kn3": {
-        "automap": true,
         "code": "hardware.GetKnobValue(hardware.CTRL_3);"
       },
       "kn4": {
-        "automap": true,
         "code": "hardware.GetKnobValue(hardware.CTRL_4);"
       },
       "gt1": {
