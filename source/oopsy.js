@@ -931,7 +931,22 @@ function analyze_cpp(cpp, hardware, cpp_path) {
 			name: 'space',
 			label: 'Space',
 			varname: 'preset1',
-			type: 'float'
+			type: 'float',
+			src: 'ext1'
+		},
+		{
+			name: 'percussive',
+			label: 'Percussive',
+			varname: 'preset2',
+			type: 'float',
+			src: 'ext2'
+		},
+		{
+			name: 'soundscape',
+			label: 'Soundscape',
+			varname: 'preset3',
+			type: 'float',
+			src: 'ext3'
 		}
 	];
 
@@ -1598,6 +1613,7 @@ struct App_${name} : public oopsy::App<App_${name}> {
 		daisy.preset_count = ${gen.presets.length};
 
 		${(defines.OOPSY_HAS_PARAM_VIEW) ? `daisy.param_selected = ${Math.max(0, gen.params.map(name=>nodes[name].src).indexOf(undefined))};`:``}
+		${(defines.OOPSY_TARGET_HAS_OLED) ? `daisy.preset_selected = ${Math.max(0, gen.presets.map(name=>nodes[name].src).indexOf(undefined))};`:``}
 
 		${gen.params.map(name=>nodes[name])
 			.map(node=>`
@@ -1643,10 +1659,12 @@ struct App_${name} : public oopsy::App<App_${name}> {
 			.filter(node => node.where == "audio" || node.where == undefined)
 			.map(node=>`
 		${node.varname} = (${node.type})(${node.src}*${asCppNumber(node.range)} + ${asCppNumber(node.min + (node.type == "int" || node.type == "bool" ? 0.5 : 0))});`).join("")}
+
 		${gen.params
 			.map(name=>nodes[name])
 			.map(node=>`
 		gen.set_${node.name}(${node.varname});`).join("")}
+
 		${daisy.audio_ins.map((name, i)=>`
 		float * ${name} = (float *)hardware_ins[${i}];`).join("")}
 		${daisy.audio_outs.map((name, i)=>`
@@ -1820,7 +1838,7 @@ struct App_${name} : public oopsy::App<App_${name}> {
 		${defines.OOPSY_OLED_DISPLAY_WIDTH < 128 ? `snprintf(label, len, "${node.label.substring(0,5).padEnd(5," ")}" FLT_FMT3 "", FLT_VAR3(${node.varname}) );` : `snprintf(label, len, "${node.src ? 
 			`${node.src.substring(0,3).padEnd(3," ")} ${node.label.substring(0,11).padEnd(11," ")}" FLT_FMT3 ""` 
 			: 
-			`%s ${node.label.substring(0,11).padEnd(11," ")}" FLT_FMT3 "", (daisy.param_is_tweaking && ${i} == daisy.param_selected) ? "enc" : "   "`
+			`%s ${node.label.substring(0,11).padEnd(11," ")}" FLT_FMT3 "", (daisy.preset_is_tweaking && ${i} == daisy.preset_selected) ? "enc" : "   "`
 			}, FLT_VAR3(${node.varname}) );`}
 		break;`).join("")}
 		}

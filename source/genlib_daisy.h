@@ -635,6 +635,12 @@ namespace oopsy {
 						if (app_selecting < 0) app_selecting += app_count;
 					#endif // OOPSY_MULTI_APP
 					#ifdef OOPSY_TARGET_HAS_OLED
+					} else if (mode == MODE_PRESETS) {
+						if (!preset_is_tweaking) {
+							preset_selected += menu_button_incr;
+							if (preset_selected >= preset_count) preset_selected = 0;
+							if (preset_selected < 0) preset_selected = preset_count-1;
+						} 
 					} else if (mode == MODE_SCOPE) {
 						switch (scope_option) {
 							case SCOPEOPTION_STYLE: {
@@ -675,6 +681,8 @@ namespace oopsy {
 							}
 						#endif
 						#ifdef OOPSY_TARGET_HAS_OLED
+						} else if (mode == MODE_PRESETS) {
+							preset_is_tweaking = !preset_is_tweaking;
 						} else if (mode == MODE_SCOPE) {
 							scope_option = (scope_option + 1) % SCOPEOPTION_COUNT;
 						#if defined (OOPSY_HAS_PARAM_VIEW) && defined(OOPSY_CAN_PARAM_TWEAK)
@@ -714,7 +722,7 @@ namespace oopsy {
 							for (int line = 0; line < console_rows && preset_x < preset_count; line++, preset_x++) {
 								presetCallback(preset_x, label, console_cols, preset_is_tweaking && preset_x == preset_selected);
 								hardware.display.SetCursor(0, font.FontHeight * line);
-								hardware.display.WriteString(label, font, true);
+								hardware.display.WriteString(label, font, (preset_selected != preset_x));
 							}
 						} break;
 
