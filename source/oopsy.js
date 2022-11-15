@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 /*
 	Generates and compiles wrapper code for gen~ export to Daisy hardware
 
@@ -558,6 +557,7 @@ function run() {
 		hardware.datahandlers = hardware.datahandlers || {}
 		hardware.labels = hardware.labels || {
 			"params": {},
+			"presets": {},
 			"outs": {},
 			"datas": {}
 		}
@@ -587,6 +587,7 @@ function run() {
 								where: mapping.where
 							}
 							hardware.labels.params[name] = name
+							hardware.labels.presets[name] = name
 						}
 						if (mapping.set) {
 							// an output
@@ -606,6 +607,7 @@ function run() {
 		for (let alias in hardware.aliases) {
 			let map = hardware.aliases[alias]
 			if (hardware.labels.params[map]) hardware.labels.params[alias] = map
+			if (hardware.labels.presets[map]) hardware.labels.presets[alias] = map
 			if (hardware.labels.outs[map]) hardware.labels.outs[alias] = map
 			if (hardware.labels.datas[map]) hardware.labels.datas[alias] = map
 		}
@@ -883,6 +885,7 @@ function analyze_cpp(cpp, hardware, cpp_path) {
 		outs: (/gen_kernel_outnames\[\]\s=\s{\s([^}]*)/g).exec(cpp)[1].split(",").map(s => s.replace(/"/g, "").trim()),
 		params: [],
 		datas: [],
+		presets: [],
 
 		// search for history outs:
 		// i.e. any history with "_out" on its name
@@ -922,6 +925,15 @@ function analyze_cpp(cpp, hardware, cpp_path) {
 			return result;
 		}),
 	}
+
+	gen.presets = [
+		{
+			name: 'space',
+			label: 'Space',
+			varname: 'preset1',
+			type: 'float'
+		}
+	];
 
 	let paramdefinitions = (cpp.match(/pi = self->__commonstate.params([^\/]+)/gm) || []);
 	paramdefinitions.forEach((s)=>{
@@ -1309,6 +1321,29 @@ function generate_app(app, hardware, target, config) {
 		return name;
 	})
 
+	gen.presets = app.patch.presets.map((preset, i) => {
+		const varname = preset.varname;
+		let src, label=preset.label, type="float";
+
+		let node = Object.assign({
+			varname: varname,
+		}, preset);
+
+		node.max = node.max || 1;
+		node.min = node.min || 0;
+		node.default = node.default || 0;
+		node.range = node.max - node.min;
+
+		nodes[varname] = node;
+		node.stepsize = 1;
+
+		if (src && nodes[src]) {
+			nodes[src].to.push(varname)
+		}
+
+		return varname;
+	});
+
 	gen.params = app.patch.params.map((param, i)=>{
 		const varname = "gen_param_"+param.name;
 		let src, label=param.name, type="float";
@@ -1531,8 +1566,13 @@ function generate_app(app, hardware, target, config) {
 
 struct App_${name} : public oopsy::App<App_${name}> {
 	${gen.params
-		.map(name=>`
-	${nodes[name].type} ${name};`).join("")}
+		.map(name=>`${nodes[name].type} ${name};`).join("")
+	}
+
+	${gen.presets
+		.map(name=>`${nodes[name].type} ${name};`).join("")
+	}
+
 	${app.midi_noteouts.map(note=>`
 	oopsy::GenDaisy::MidiNote ${note.cname};`).join("")}
 	${gen.histories.map(name=>nodes[name]).filter(node => node && node.midi_type).map(node=>`
@@ -1555,10 +1595,18 @@ struct App_${name} : public oopsy::App<App_${name}> {
 		${name}::State& gen = *(${name}::State *)daisy.gen;
 		
 		daisy.param_count = ${gen.params.length};
+		daisy.preset_count = ${gen.presets.length};
+
 		${(defines.OOPSY_HAS_PARAM_VIEW) ? `daisy.param_selected = ${Math.max(0, gen.params.map(name=>nodes[name].src).indexOf(undefined))};`:``}
+
 		${gen.params.map(name=>nodes[name])
 			.map(node=>`
 		${node.varname} = ${asCppNumber(node.default, node.type)};`).join("")}
+
+		${gen.presets.map(name=>nodes[name])
+			.map(node=>`
+		${node.varname} = ${asCppNumber(node.default, node.type)};`).join("")}
+
 		${daisy.device_outs.map(name => nodes[name])
 			.filter(node => node.src || node.from.length)
 			.map(node=>`
@@ -1750,6 +1798,41 @@ struct App_${name} : public oopsy::App<App_${name}> {
 		return 0.f;	
 	}
 
+
+
+	
+
+	float setpreset(int idx, float val) {
+		switch(idx) {
+			${gen.presets
+				.map(name=>nodes[name])
+				.map((node, i)=>`
+			case ${i}: return ${node.varname} = (${node.type})(val > ${asCppNumber(node.max, node.type)}) ? ${asCppNumber(node.max, node.type)} : (val < ${asCppNumber(node.min, node.type)}) ? ${asCppNumber(node.min, node.type)} : val;`).join("")}
+		}
+		return 0.f;	
+	}
+
+	${defines.OOPSY_TARGET_HAS_OLED ? `
+	void presetCallback(oopsy::GenDaisy& daisy, int idx, char * label, int len, bool tweak) {
+		switch(idx) { ${gen.presets.map(name=>nodes[name]).map((node, i)=>`
+		case ${i}: ${defines.OOPSY_CAN_PARAM_TWEAK ? `
+		if (tweak) setpreset(${i}, ${node.varname} + daisy.menu_button_incr ${node.type == "float" ? '* ' + asCppNumber(node.stepsize, node.type) : ""});` : ""}
+		${defines.OOPSY_OLED_DISPLAY_WIDTH < 128 ? `snprintf(label, len, "${node.label.substring(0,5).padEnd(5," ")}" FLT_FMT3 "", FLT_VAR3(${node.varname}) );` : `snprintf(label, len, "${node.src ? 
+			`${node.src.substring(0,3).padEnd(3," ")} ${node.label.substring(0,11).padEnd(11," ")}" FLT_FMT3 ""` 
+			: 
+			`%s ${node.label.substring(0,11).padEnd(11," ")}" FLT_FMT3 "", (daisy.param_is_tweaking && ${i} == daisy.param_selected) ? "enc" : "   "`
+			}, FLT_VAR3(${node.varname}) );`}
+		break;`).join("")}
+		}
+	}
+	` : ""}
+
+
+
+
+
+
+
 	${defines.OOPSY_TARGET_HAS_OLED && defines.OOPSY_HAS_PARAM_VIEW ? `
 	void paramCallback(oopsy::GenDaisy& daisy, int idx, char * label, int len, bool tweak) {
 		switch(idx) { ${gen.params.map(name=>nodes[name]).map((node, i)=>`
@@ -1771,5 +1854,8 @@ struct App_${name} : public oopsy::App<App_${name}> {
 		appdef: `{"${name}", []()->void { oopsy::daisy.reset(apps.app_${name}); } },`,
 		struct: struct,
 	}
+
+	// console.log("nodes", nodes);
+	
 	return app
 }

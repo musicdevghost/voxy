@@ -34,6 +34,9 @@
         "ctrl4": "kn4",
         "gate": "gt1"
       },
+      "presets": {
+        "preset1": "preset1"
+      },
       "outs": {
         "cv1": "cvout1",
         "cv2": "cvout2",

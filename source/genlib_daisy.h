@@ -137,6 +137,7 @@ namespace oopsy {
 				MODE_PARAMS,
 			#endif
 			MODE_CONSOLE,
+			MODE_PRESETS,
 		#endif
 		#ifdef OOPSY_MULTI_APP
 			MODE_MENU,
@@ -161,9 +162,11 @@ namespace oopsy {
 		int /*menu_button_held = 0, */menu_button_released = 0, menu_button_held_ms = 0, menu_button_incr = 0;
 		int is_mode_selecting = 0;
 		int param_count = 0;
+		int preset_count = 0;
 		#ifdef OOPSY_HAS_PARAM_VIEW
 		int param_selected = 0, param_is_tweaking = 0, param_scroll = 0;
 		#endif
+		int preset_selected = 0, preset_is_tweaking = 0, preset_scroll = 0;
 
 		uint32_t t = 0, dt = 10, blockcount = 0;
 		Timer uitimer;
@@ -176,6 +179,7 @@ namespace oopsy {
 		#ifdef OOPSY_HAS_PARAM_VIEW
 		void (*paramCallback)(int idx, char * label, int len, bool tweak);
 		#endif
+		void (*presetCallback)(int idx, char * label, int len, bool tweak);
 		void * app = nullptr;
 		void * gen = nullptr;
 		bool nullAudioCallbackRunning = false;
@@ -410,6 +414,7 @@ namespace oopsy {
 			#if defined(OOPSY_TARGET_HAS_OLED) && defined(OOPSY_HAS_PARAM_VIEW)
 			paramCallback = newapp.staticParamCallback;
 			#endif
+			presetCallback = newapp.staticPresetCallback;
 
 			sub_board->ChangeAudioCallback(newapp.staticAudioCallback);
 			log("gen~ %s", appdefs[app_selected].name);
@@ -699,6 +704,20 @@ namespace oopsy {
 							}
 						} break;
 						#endif //OOPSY_MULTI_APP
+						
+						case MODE_PRESETS: {
+							char label[console_cols+1];
+							if (preset_scroll > preset_selected) preset_scroll = preset_selected;
+							if (preset_scroll < (preset_selected - console_rows + 1)) preset_scroll = (preset_selected - console_rows + 1);
+							int preset_x = preset_scroll; // offset this for screen-scroll
+
+							for (int line = 0; line < console_rows && preset_x < preset_count; line++, preset_x++) {
+								presetCallback(preset_x, label, console_cols, preset_is_tweaking && preset_x == preset_selected);
+								hardware.display.SetCursor(0, font.FontHeight * line);
+								hardware.display.WriteString(label, font, true);
+							}
+						} break;
+
 						#ifdef OOPSY_HAS_PARAM_VIEW
 						case MODE_PARAMS: {
 							char label[console_cols+1];
@@ -1093,6 +1112,13 @@ namespace oopsy {
 			daisy.audioCpuUsage = (percent > daisy.audioCpuUsage) ? percent 
 				: daisy.audioCpuUsage + 0.02f*(percent - daisy.audioCpuUsage);
 		}
+
+		#if defined(OOPSY_TARGET_HAS_OLED)
+		static void staticPresetCallback(int idx, char * label, int len, bool tweak) {
+			T& self = *(T *)daisy.app;
+			self.presetCallback(daisy, idx, label, len, tweak);
+		}
+		#endif //defined(OOPSY_TARGET_HAS_OLED)
 
 		#if defined(OOPSY_TARGET_HAS_OLED) && defined(OOPSY_HAS_PARAM_VIEW)
 		static void staticParamCallback(int idx, char * label, int len, bool tweak) {
