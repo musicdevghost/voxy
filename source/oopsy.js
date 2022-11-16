@@ -931,21 +931,21 @@ function analyze_cpp(cpp, hardware, cpp_path) {
 			name: 'space',
 			label: 'Space',
 			varname: 'preset1',
-			type: 'float',
+			type: 'bool',
 			src: 'ext1'
 		},
 		{
 			name: 'percussive',
 			label: 'Percussive',
 			varname: 'preset2',
-			type: 'float',
+			type: 'bool',
 			src: 'ext2'
 		},
 		{
 			name: 'soundscape',
 			label: 'Soundscape',
 			varname: 'preset3',
-			type: 'float',
+			type: 'bool',
 			src: 'ext3'
 		}
 	];
@@ -1821,6 +1821,9 @@ struct App_${name} : public oopsy::App<App_${name}> {
 	
 
 	float setpreset(int idx, float val) {
+		${gen.presets
+			.map(name=>nodes[name])
+			.map((node, i)=>`${node.varname} = ${asCppNumber(0, node.type)}`).join(";")};
 		switch(idx) {
 			${gen.presets
 				.map(name=>nodes[name])
@@ -1831,14 +1834,15 @@ struct App_${name} : public oopsy::App<App_${name}> {
 	}
 
 	${defines.OOPSY_TARGET_HAS_OLED ? `
-	void presetCallback(oopsy::GenDaisy& daisy, int idx, char * label, int len, bool tweak) {
-		switch(idx) { ${gen.presets.map(name=>nodes[name]).map((node, i)=>`
-		case ${i}: ${defines.OOPSY_CAN_PARAM_TWEAK ? `
-		if (tweak) setpreset(${i}, ${node.varname} + daisy.menu_button_incr ${node.type == "float" ? '* ' + asCppNumber(node.stepsize, node.type) : ""});` : ""}
-		${defines.OOPSY_OLED_DISPLAY_WIDTH < 128 ? `snprintf(label, len, "${node.label.substring(0,5).padEnd(5," ")}" FLT_FMT3 "", FLT_VAR3(${node.varname}) );` : `snprintf(label, len, "${node.src ? 
-			`${node.src.substring(0,3).padEnd(3," ")} ${node.label.substring(0,11).padEnd(11," ")}" FLT_FMT3 ""` 
-			: 
-			`%s ${node.label.substring(0,11).padEnd(11," ")}" FLT_FMT3 "", (daisy.preset_is_tweaking && ${i} == daisy.preset_selected) ? "enc" : "   "`
+	void presetCallback(oopsy::GenDaisy& daisy, int idx, char * label, int len, bool tweak) { 
+		switch(idx) { 
+			${gen.presets.map(name=>nodes[name]).map((node, i)=>`
+				case ${i}: ${defines.OOPSY_CAN_PARAM_TWEAK ? `
+					if (tweak) daisy.is_mode_selecting = 0, daisy.preset_is_tweaking = 0, setpreset(${i}, 1 ${node.type == "float" ? '* ' + asCppNumber(node.stepsize, node.type) : ""});` : ""}
+					${defines.OOPSY_OLED_DISPLAY_WIDTH < 128 ? `snprintf(label, len, "${node.label.substring(0,5).padEnd(5," ")}" FLT_FMT3 "", FLT_VAR3(${node.varname}) );` : `snprintf(label, len, "${node.src ? 
+					`${node.label.substring(0,11).padEnd(15," ")}" FLT_FMT3 ""` 
+				: 
+					`%s ${node.label.substring(0,11).padEnd(11," ")}" FLT_FMT3 "", (daisy.preset_is_tweaking && ${i} == daisy.preset_selected) ? "enc" : "   "`
 			}, FLT_VAR3(${node.varname}) );`}
 		break;`).join("")}
 		}
