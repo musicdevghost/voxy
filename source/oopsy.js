@@ -926,30 +926,6 @@ function analyze_cpp(cpp, hardware, cpp_path) {
 		}),
 	}
 
-	gen.presets = [
-		{
-			name: 'space',
-			label: 'Space',
-			varname: 'preset1',
-			type: 'bool',
-			src: 'ext1'
-		},
-		{
-			name: 'percussive',
-			label: 'Percussive',
-			varname: 'preset2',
-			type: 'bool',
-			src: 'ext2'
-		},
-		{
-			name: 'soundscape',
-			label: 'Soundscape',
-			varname: 'preset3',
-			type: 'bool',
-			src: 'ext3'
-		}
-	];
-
 	let paramdefinitions = (cpp.match(/pi = self->__commonstate.params([^\/]+)/gm) || []);
 	paramdefinitions.forEach((s)=>{
 		let type = /pi->paramtype\s+=\s+([^;]+)/gm.exec(s)[1];
@@ -1336,12 +1312,16 @@ function generate_app(app, hardware, target, config) {
 		return name;
 	})
 
-	gen.presets = app.patch.presets.map((preset, i) => {
-		const varname = preset.varname;
-		let src, label=preset.label, type="float";
+	const presetsJsonPath = posixify_path(app.path.substring(0, app.path.lastIndexOf("/")) + "/presets.json");
+	const presetsData = require(presetsJsonPath);
+
+	gen.presets = presetsData.map((preset, i) => {
+		const varname = "gen_preset_"+preset.name.replace(/\s/g, '_');
+		let src, label=preset.name, type="float";
 
 		let node = Object.assign({
 			varname: varname,
+			type: type
 		}, preset);
 
 		node.max = node.max || 1;
@@ -1356,8 +1336,10 @@ function generate_app(app, hardware, target, config) {
 			nodes[src].to.push(varname)
 		}
 
-		return varname;
+		return node;
 	});
+
+	// console.log("PRESETS: ", gen.presets);
 
 	gen.params = app.patch.params.map((param, i)=>{
 		const varname = "gen_param_"+param.name;
@@ -1578,14 +1560,13 @@ function generate_app(app, hardware, target, config) {
 	}
 
 	const struct = `
-
 struct App_${name} : public oopsy::App<App_${name}> {
 	${gen.params
 		.map(name=>`${nodes[name].type} ${name};`).join("")
 	}
 
 	${gen.presets
-		.map(name=>`${nodes[name].type} ${name};`).join("")
+		.map(preset=>`${preset.type} ${preset.varname};`).join("")
 	}
 
 	${app.midi_noteouts.map(note=>`
@@ -1613,15 +1594,18 @@ struct App_${name} : public oopsy::App<App_${name}> {
 		daisy.preset_count = ${gen.presets.length};
 
 		${(defines.OOPSY_HAS_PARAM_VIEW) ? `daisy.param_selected = ${Math.max(0, gen.params.map(name=>nodes[name].src).indexOf(undefined))};`:``}
-		${(defines.OOPSY_TARGET_HAS_OLED) ? `daisy.preset_selected = ${Math.max(0, gen.presets.map(name=>nodes[name].src).indexOf(undefined))};`:``}
+		${(defines.OOPSY_TARGET_HAS_OLED) ? `daisy.preset_selected = ${Math.max(0, gen.presets.map(preset=>preset.src).indexOf(undefined))};`:``}
 
 		${gen.params.map(name=>nodes[name])
 			.map(node=>`
 		${node.varname} = ${asCppNumber(node.default, node.type)};`).join("")}
 
-		${gen.presets.map(name=>nodes[name])
-			.map(node=>`
-		${node.varname} = ${asCppNumber(node.default, node.type)};`).join("")}
+		// Presets
+		${gen.presets.map((node, idx)=>`
+		${node.varname} = 0.0f;
+		daisy.presets[${idx}] = {"${node.name}", ${node.tempo}};`)
+		.join("")}
+
 
 		${daisy.device_outs.map(name => nodes[name])
 			.filter(node => node.src || node.from.length)
@@ -1817,35 +1801,37 @@ struct App_${name} : public oopsy::App<App_${name}> {
 	}
 
 
-
+  
 	
 
 	float setpreset(int idx, float val) {
-		${gen.presets
-			.map(name=>nodes[name])
-			.map((node, i)=>`${node.varname} = ${asCppNumber(0, node.type)}`).join(";")};
+		${gen.presets.map((node, i)=>`${node.varname} = 0.f`).join(",")};
 		switch(idx) {
-			${gen.presets
-				.map(name=>nodes[name])
-				.map((node, i)=>`
-			case ${i}: return ${node.varname} = (${node.type})(val > ${asCppNumber(node.max, node.type)}) ? ${asCppNumber(node.max, node.type)} : (val < ${asCppNumber(node.min, node.type)}) ? ${asCppNumber(node.min, node.type)} : val;`).join("")}
+			case 0: 
+			setparam(0, ${gen.presets[0].tempo});
+			break;
+			default: break;
+		}
+		switch(idx) {
+			${gen.presets.map((node, i)=>`
+			case ${i}:
+			return ${node.varname} = 1; 
+			break;`).join("")}
 		}
 		return 0.f;	
 	}
 
 	${defines.OOPSY_TARGET_HAS_OLED ? `
 	void presetCallback(oopsy::GenDaisy& daisy, int idx, char * label, int len, bool tweak) { 
-		switch(idx) { 
-			${gen.presets.map(name=>nodes[name]).map((node, i)=>`
-				case ${i}: ${defines.OOPSY_CAN_PARAM_TWEAK ? `
-					if (tweak) daisy.is_mode_selecting = 0, daisy.preset_is_tweaking = 0, setpreset(${i}, 1 ${node.type == "float" ? '* ' + asCppNumber(node.stepsize, node.type) : ""});` : ""}
-					${defines.OOPSY_OLED_DISPLAY_WIDTH < 128 ? `snprintf(label, len, "${node.label.substring(0,5).padEnd(5," ")}" FLT_FMT3 "", FLT_VAR3(${node.varname}) );` : `snprintf(label, len, "${node.src ? 
-					`${node.label.substring(0,11).padEnd(15," ")}" FLT_FMT3 ""` 
+		switch(idx) { ${gen.presets.map((node, i)=>`
+		case ${i}: if (tweak) daisy.is_mode_selecting = 0, daisy.preset_is_tweaking = 0, setpreset(${i}, ${asCppNumber(1)});
+			${defines.OOPSY_OLED_DISPLAY_WIDTH < 128 ? `snprintf(name, len, "${node.name.substring(0,5).padEnd(5," ")}" FLT_FMT3 "", FLT_VAR3(${node.varname}) );` : `snprintf(label, len, "${node.src ? 
+				`${node.name.substring(0,11).padEnd(15," ")}" FLT_FMT3 ""` 
 				: 
-					`%s ${node.label.substring(0,11).padEnd(11," ")}" FLT_FMT3 "", (daisy.preset_is_tweaking && ${i} == daisy.preset_selected) ? "enc" : "   "`
-			}, FLT_VAR3(${node.varname}) );`}
-		break;`).join("")}
-		}
+				`%s${node.name.substring(0,11).padEnd(15," ")}" FLT_FMT3 "", (daisy.preset_is_tweaking && ${i} == daisy.preset_selected) ? "enc" : ""`
+				}, FLT_VAR3(${node.varname}) );`}
+			break;`).join("")}
+		}	
 	}
 	` : ""}
 
@@ -1877,7 +1863,7 @@ struct App_${name} : public oopsy::App<App_${name}> {
 		struct: struct,
 	}
 
-	// console.log("nodes", nodes);
+	// console.log("DEBUG==================================================", gen.presets);
 	
 	return app
 }

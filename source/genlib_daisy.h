@@ -132,12 +132,12 @@ namespace oopsy {
 	};
 	typedef enum {
 		#ifdef OOPSY_TARGET_HAS_OLED
-			MODE_SCOPE,
+			MODE_PRESETS,
 			#ifdef OOPSY_HAS_PARAM_VIEW
 				MODE_PARAMS,
 			#endif
+			MODE_SCOPE,
 			MODE_CONSOLE,
-			MODE_PRESETS,
 		#endif
 		#ifdef OOPSY_MULTI_APP
 			MODE_MENU,
@@ -200,7 +200,14 @@ namespace oopsy {
 			SCOPEOPTION_ZOOM,
 			SCOPEOPTION_COUNT
 		} ScopeOptions;
+
+		struct Presets {
+			std::string str;
+			float tempo;
+		};
 		
+		Presets presets[4];
+
 		FontDef& font = Font_6x8;
 		uint_fast8_t scope_zoom = 7; 
 		uint_fast8_t scope_step = 0; 
