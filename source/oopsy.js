@@ -1603,7 +1603,7 @@ struct App_${name} : public oopsy::App<App_${name}> {
 		// Presets
 		${gen.presets.map((node, idx)=>`
 		${node.varname} = 0.0f;
-		daisy.presets[${idx}] = {"${node.name}", ${node.tempo}};`)
+		daisy.presets[${idx}] = {"${node.name}", ${node.tempo}, ${node.pulseDiv}, ${node.pulseMult}, ${node.delay1fdb}, ${node.delay1Div}, ${node.delay1Mult}, ${node.delay2Div}, ${node.delay2Mult}, ${node.delay3Div}, ${node.delay3Mult}, ${node.delay4Div}, ${node.delay4Mult}};`)
 		.join("")}
 
 
@@ -1799,9 +1799,6 @@ struct App_${name} : public oopsy::App<App_${name}> {
 		}
 		return 0.f;	
 	}
-
-
-  
 	
 
 	float setpreset(int idx, float val) {
@@ -1809,6 +1806,31 @@ struct App_${name} : public oopsy::App<App_${name}> {
 		switch(idx) {
 			case 0: 
 			setparam(0, ${gen.presets[0].tempo});
+			setparam(1, ${gen.presets[0].pulseDiv});
+			setparam(2, ${gen.presets[0].pulseMult});
+			setparam(3, ${gen.presets[0].delay1fdb});
+			setparam(4, ${gen.presets[0].delay1Div});
+			setparam(5, ${gen.presets[0].delay1Mult});
+			setparam(6, ${gen.presets[0].delay2Div});
+			setparam(7, ${gen.presets[0].delay2Mult});
+			setparam(8, ${gen.presets[0].delay3Div});
+			setparam(9, ${gen.presets[0].delay3Mult});
+			setparam(10, ${gen.presets[0].delay4Div});
+			setparam(11, ${gen.presets[0].delay4Mult});
+			break;
+			case 1: 
+			setparam(0, ${gen.presets[1].tempo});
+			setparam(1, ${gen.presets[1].pulseDiv});
+			setparam(2, ${gen.presets[1].pulseMult});
+			setparam(3, ${gen.presets[1].delay1fdb});
+			setparam(4, ${gen.presets[1].delay1Div});
+			setparam(5, ${gen.presets[1].delay1Mult});
+			setparam(6, ${gen.presets[1].delay2Div});
+			setparam(7, ${gen.presets[1].delay2Mult});
+			setparam(8, ${gen.presets[1].delay3Div});
+			setparam(9, ${gen.presets[1].delay3Mult});
+			setparam(10, ${gen.presets[1].delay4Div});
+			setparam(11, ${gen.presets[1].delay4Mult});
 			break;
 			default: break;
 		}

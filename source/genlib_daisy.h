@@ -204,6 +204,17 @@ namespace oopsy {
 		struct Presets {
 			std::string str;
 			float tempo;
+			float pulseDiv;
+			float pulseMult;
+			float delay1fdb;
+			float delay1Div;
+			float delay1Mult;
+			float delay2Div;
+			float delay2Mult;
+			float delay3Div;
+			float delay3Mult;
+			float delay4Div;
+			float delay4Mult;
 		};
 		
 		Presets presets[4];
